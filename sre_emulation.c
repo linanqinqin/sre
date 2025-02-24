@@ -18,7 +18,7 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
     // might need them in the future
 
     // Log the access and call inject_sre unconditionally
-    pr_info("PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
+    pr_info("[linanqinqin] PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
 
     // the per-GPA metadata determines whether this is an SRE
     if (1) {
@@ -37,7 +37,7 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs, unsigned long f
     gpa_t gpa = (gpa_t)regs->si;
 
     // Log completion and call inject_sre again
-    pr_info("POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
+    pr_info("[linanqinqin] POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
 
     // only injects sre in post if this contains both EPT violation and SRE
     if (1) {
@@ -56,17 +56,17 @@ static struct kprobe kp = {
 static int __init sre_init(void) {
     int ret = register_kprobe(&kp);
     if (ret < 0) {
-        pr_err("Failed to register kprobe: %d\n", ret);
+        pr_err("[linanqinqin] Failed to register kprobe: %d\n", ret);
         return ret;
     }
-    pr_info("SRE: Kprobe registered successfully\n");
+    pr_info("[linanqinqin] SRE Kprobe registered successfully\n");
     return 0;
 }
 
 // Module cleanup
 static void __exit sre_exit(void) {
     unregister_kprobe(&kp);
-    pr_info("SRE: Kprobe unregistered\n");
+    pr_info("[linanqinqin] SRE Kprobe unregistered\n");
 }
 
 module_init(sre_init);
