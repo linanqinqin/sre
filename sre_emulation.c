@@ -4,7 +4,7 @@
 #include <linux/kvm_host.h>
 
 // Dummy function for SRE injection (to be implemented later)
-static void inject_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
+static void emulate_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
     // Empty for now
 }
 
@@ -17,12 +17,12 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
     // void *insn, int insn_len
     // might need them in the future
 
-    // Log the access and call inject_sre unconditionally
+    // Log the access and call emulate_sre unconditionally
     pr_info("[linanqinqin] PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
 
     // the per-GPA metadata determines whether this is an SRE
     if (1) {
-        inject_sre(vcpu, gpa);
+        emulate_sre(vcpu, gpa);
         // if this does not contain an EPT violation, skip kvm_mmu_page_fault
         // return 1;    
     }
@@ -36,12 +36,12 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs, unsigned long f
     struct kvm_vcpu *vcpu = (struct kvm_vcpu *)regs->di;
     gpa_t gpa = (gpa_t)regs->si;
 
-    // Log completion and call inject_sre again
+    // Log completion and call emulate_sre again
     pr_info("[linanqinqin] POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
 
     // only injects sre in post if this contains both EPT violation and SRE
     if (1) {
-        inject_sre(vcpu, gpa);
+        emulate_sre(vcpu, gpa);
     }
 }
 
