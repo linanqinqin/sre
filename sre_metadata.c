@@ -30,11 +30,13 @@ struct sre_flags *sre_flags_new(gpa_t gpa) {
     entry->gpa = gpa;
     entry->is_sre = false;          // is_sre should be initialized to false; the flash emulation layer sets it later 
     entry->is_ept = true;           // is_ept should be initialized to true, since the first occurence is always a regular EPT violation 
-    atomic_set(&entry->access_count, 0);    // probably does not need atomic here at init
+    // atomic_set(&entry->access_count, 0);    // probably does not need atomic here at init
 
     spin_lock(&sre_flags_spinlock);
     hash_add(sre_metadata_hash, &entry->node, gpa);
     spin_unlock(&sre_flags_spinlock);
+
+    return entry;
 }
 
 // Remove a GPA from the hash table
