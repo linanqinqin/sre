@@ -52,7 +52,6 @@ void sre_flgas_remove(gpa_t gpa) {
 }
 
 // Lookup sre_flags for a GPA
-
 struct sre_flags *sre_flags_lookup(gpa_t gpa) {  
     struct sre_flags *entry;  
 

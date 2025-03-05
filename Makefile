@@ -1,4 +1,4 @@
-obj-m += sre_emulation.o
+obj-m += sre_emulation.o sre_metadata.o 
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
