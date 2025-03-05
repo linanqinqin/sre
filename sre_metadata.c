@@ -5,6 +5,23 @@
 DEFINE_HASHTABLE(sre_metadata_hash, SRE_HASH_BITS);
 DEFINE_SPINLOCK(sre_flags_spinlock);
 
+// initialize the sre_flags hashmap
+void sre_flags_init(void) {  
+    hash_init(sre_metadata_hash);  
+}  
+
+// cleanup the entire sre_flags hashmap
+void sre_flags_cleanup(void) {  
+    struct sre_flags *entry;  
+    struct hlist_node *tmp;  
+    unsigned long bkt;  
+
+    hash_for_each_safe(sre_metadata_hash, bkt, tmp, entry, node) {  
+        hash_del(&entry->node);  
+        kfree(entry);  
+    }  
+}  
+
 // Add a GPA to the hash table
 void sre_flags_new(gpa_t gpa) {
     struct sre_flags *entry = kmalloc(sizeof(*entry), GFP_KERNEL);
@@ -34,13 +51,30 @@ void sre_flgas_remove(gpa_t gpa) {
     }
 }
 
-// Lookup metadata for a GPA
-struct sre_flags *sre_flags_lookup(gpa_t gpa) {
-    struct sre_flags *entry;
-    hash_for_each_possible(sre_metadata_hash, entry, node, gpa) {
-        if (entry->gpa == gpa) {
-            return entry;
-        }
-    }
-    return NULL;
-}
+// Lookup sre_flags for a GPA
+
+struct sre_flags *sre_flags_lookup(gpa_t gpa) {  
+    struct sre_flags *entry;  
+
+    // Check if entry exists  
+    hash_for_each_possible(sre_metadata_hash, entry, node, gpa) {  
+        if (entry->gpa == gpa) {  
+            return entry;  
+        }  
+    }  
+
+    // Allocate new entry if not found  
+    entry = kmalloc(sizeof(*entry), GFP_ATOMIC);  
+    if (!entry) return NULL;  
+
+    entry->gpa = gpa;  
+    entry->is_sre = false;  
+    atomic_set(&entry->access_count, 0);  
+
+    // Add to hash table  
+    spin_lock(&sre_hash_lock);  
+    hash_add(sre_metadata_hash, &entry->node, gpa);  
+    spin_unlock(&sre_hash_lock);  
+
+    return entry;  
+}  

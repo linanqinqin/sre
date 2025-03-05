@@ -22,8 +22,8 @@ extern DECLARE_HASHTABLE(sre_metadata_hash, SRE_HASH_BITS);
 extern spinlock_t sre_hash_lock;
 
 // internal helper functions
-void sre_flags_new(gpa_t gpa);
-void sre_flags_remove(gpa_t gpa);
+// void sre_flags_new(gpa_t gpa);
+// void sre_flags_remove(gpa_t gpa);
 
 // exposed APIs
 void sre_flags_init(void);  
