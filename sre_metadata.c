@@ -23,9 +23,9 @@ void sre_flags_cleanup(void) {
 }  
 
 // Add a GPA to the hash table
-void sre_flags_new(gpa_t gpa) {
+struct sre_flags *sre_flags_new(gpa_t gpa) {
     struct sre_flags *entry = kmalloc(sizeof(*entry), GFP_KERNEL);
-    if (!entry) return;
+    if (!entry) return NULL;
 
     entry->gpa = gpa;
     entry->is_sre = false;          // is_sre should be initialized to false; the flash emulation layer sets it later 
@@ -64,17 +64,7 @@ struct sre_flags *sre_flags_lookup(gpa_t gpa) {
     }  
 
     // Allocate new entry if not found  
-    entry = kmalloc(sizeof(*entry), GFP_ATOMIC);  
-    if (!entry) return NULL;  
-
-    entry->gpa = gpa;  
-    entry->is_sre = false;  
-    atomic_set(&entry->access_count, 0);  
-
-    // Add to hash table  
-    spin_lock(&sre_hash_lock);  
-    hash_add(sre_metadata_hash, &entry->node, gpa);  
-    spin_unlock(&sre_hash_lock);  
-
+    entry = sre_flags_new(gpa);
+    
     return entry;  
 }  
