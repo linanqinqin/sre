@@ -18,8 +18,9 @@ struct sre_flags {
 };
 
 // Declare hash table and spinlock (defined in sre_metadata.c)
-extern DECLARE_HASHTABLE(sre_metadata_hash, SRE_HASH_BITS);
-extern spinlock_t sre_hash_lock;
+// probably do not need to export these
+// extern DECLARE_HASHTABLE(sre_metadata_hash, SRE_HASH_BITS);
+// extern DECLARE_SPINLOCK(sre_flags_spinlock);
 
 // internal helper functions
 // struct sre_flags *sre_flags_new(gpa_t gpa);
