@@ -3,9 +3,13 @@
 #include <linux/kprobes.h>
 #include <linux/kvm_host.h>
 
+#include <sre_metadata.h>
+
 // Dummy function for SRE injection (to be implemented later)
 static void emulate_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
     // Empty for now
+
+    // input arguments should probably include struct sre_flags
 }
 
 // Pre-handler: Runs BEFORE kvm_mmu_page_fault
@@ -17,17 +21,43 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
     // void *insn, int insn_len
     // might need them in the future
 
+    struct sre_flags *sflags; 
+
     // Log the access and call emulate_sre unconditionally
     pr_info("[linanqinqin] PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
 
-    // the per-GPA metadata determines whether this is an SRE
-    if (1) {
+    // lookup the per-GPA SRE flags metadata
+    sflags = sre_flags_lookup(gpa);
+    if (!sflags) return 0;      // skip handler_pre when lookup failed, due to allocation failure 
+
+    // checking the ept and sre flags to determine appropriate paths 
+    if (sflags->is_ept) {
+        // this EPT violation contains a regular EPT violation
+        
+        // unset the ept flag, but be cautious: what if kvm_mmu_page_fault could not resolve the violation?
+        // unsetting the ept flag would disable regular violation handling, which is intended under the 
+        // assumption that kvm_mmu_page_fault will always succeed
+        sflags->is_ept = false; 
+        
+        // directly proceed to kvm_mmu_page_fault 
+        return 0;
+    }
+    else if (sflags->is_sre) {
+        // this EPT violation is only for SRE
+        
+        // unset the sre flag
+        sflags->is_sre = false;
+        // inject an SRE to the guest OS
         emulate_sre(vcpu, gpa);
-        // if this does not contain an EPT violation, skip kvm_mmu_page_fault
-        // return 1;    
+        
+        // return non-0 to skip kvm_mmu_page_fault
+        return 1;
+    } 
+    else {
+        // this should not happen
     }
 
-    // Allow original kvm_mmu_page_fault to execute
+    // default: allow original kvm_mmu_page_fault to execute
     return 0;
 }
 
@@ -35,12 +65,19 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
 static void handler_post(struct kprobe *p, struct pt_regs *regs, unsigned long flags) {
     struct kvm_vcpu *vcpu = (struct kvm_vcpu *)regs->di;
     gpa_t gpa = (gpa_t)regs->si;
+    struct sre_flags *sflags; 
 
     // Log completion and call emulate_sre again
     pr_info("[linanqinqin] POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
 
+    // lookup the per-GPA SRE flags metadata
+    sflags = sre_flags_lookup(gpa); 
+    if (!sflags) return;      // allocation failure 
+
     // only injects sre in post if this contains both EPT violation and SRE
-    if (1) {
+    if (sflags->is_sre) {
+        // this is when both ept and sre were set, and the regular EPT violation was handled first
+        sflags->is_sre = false;
         emulate_sre(vcpu, gpa);
     }
 }
@@ -59,6 +96,10 @@ static int __init sre_init(void) {
         pr_err("[linanqinqin] Failed to register kprobe: %d\n", ret);
         return ret;
     }
+
+    // initialize the sre_flags hashmap 
+    sre_flags_init(); 
+
     pr_info("[linanqinqin] SRE Kprobe registered successfully\n");
     return 0;
 }
@@ -66,6 +107,7 @@ static int __init sre_init(void) {
 // Module cleanup
 static void __exit sre_exit(void) {
     unregister_kprobe(&kp);
+    sre_flags_cleanup();
     pr_info("[linanqinqin] SRE Kprobe unregistered\n");
 }
 
