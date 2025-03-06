@@ -3,7 +3,7 @@
 #include <linux/kprobes.h>
 #include <linux/kvm_host.h>
 
-#include <sre_metadata.h>
+#include "sre_metadata.h"
 
 // Dummy function for SRE injection (to be implemented later)
 static void emulate_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
