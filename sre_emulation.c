@@ -13,7 +13,7 @@ static void emulate_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
 }
 
 // Pre-handler: Runs BEFORE kvm_mmu_page_fault
-static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
+static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
     // Extract arguments from registers (x86_64 calling convention)
     struct kvm_vcpu *vcpu = (struct kvm_vcpu *)regs->di;
     gpa_t gpa = (gpa_t)regs->si;
@@ -28,7 +28,7 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
 
     // lookup the per-GPA SRE flags metadata
     sflags = sre_flags_lookup(gpa);
-    if (!sflags) return 0;      // skip handler_pre when lookup failed, due to allocation failure 
+    if (!sflags) return 0;      // skip ept_violation_pre when lookup failed, due to allocation failure 
 
     // checking the ept and sre flags to determine appropriate paths 
     if (sflags->is_ept) {
@@ -62,7 +62,7 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs) {
 }
 
 // Post-handler: Runs AFTER kvm_mmu_page_fault
-static void handler_post(struct kprobe *p, struct pt_regs *regs, unsigned long flags) {
+static void ept_violation_post(struct kprobe *p, struct pt_regs *regs, unsigned long flags) {
     struct kvm_vcpu *vcpu = (struct kvm_vcpu *)regs->di;
     gpa_t gpa = (gpa_t)regs->si;
     struct sre_flags *sflags; 
@@ -82,16 +82,22 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs, unsigned long f
     }
 }
 
-// Kprobe configuration
-static struct kprobe kp = {
+// Kprobe configuration for kvm_mmu_page_fault: kvm's EPT violation handler
+static struct kprobe ept_violation_kp = {
     .symbol_name = "kvm_mmu_page_fault", // Function to hook
-    .pre_handler  = handler_pre,         // Pre-handler
-    .post_handler = handler_post         // Post-handler
-};
+    .pre_handler  = ept_violation_pre,         // Pre-handler
+    .post_handler = ept_violation_post         // Post-handler
+}; 
+
+// Kprobe for kvm_unmap_gfn_range: invalidate an EPT entry 
+// static struct kprobe ept_invalidation_kp = {
+//     .symbol_name = "kvm_unmap_gfn_range", 
+//     .pre_handler = ept_invalidation_pre
+// };
 
 // Module initialization
 static int __init sre_init(void) {
-    int ret = register_kprobe(&kp);
+    int ret = register_kprobe(&ept_violation_kp);
     if (ret < 0) {
         pr_err("[linanqinqin] Failed to register kprobe: %d\n", ret);
         return ret;
@@ -106,7 +112,7 @@ static int __init sre_init(void) {
 
 // Module cleanup
 static void __exit sre_exit(void) {
-    unregister_kprobe(&kp);
+    unregister_kprobe(&ept_violation_kp);
     sre_flags_cleanup();
     pr_info("[linanqinqin] SRE Kprobe unregistered\n");
 }
