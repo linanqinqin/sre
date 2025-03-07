@@ -12,6 +12,12 @@ static void emulate_sre(struct kvm_vcpu *vcpu, gpa_t gpa) {
     // input arguments should probably include struct sre_flags
 }
 
+/**
+ * *********************************** * 
+ * kprobe hooks for kvm_mmu_page_fault * 
+ * *********************************** * 
+ */ 
+
 // Pre-handler: Runs BEFORE kvm_mmu_page_fault
 static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
     // Extract arguments from registers (x86_64 calling convention)
@@ -89,17 +95,49 @@ static struct kprobe ept_violation_kp = {
     .post_handler = ept_violation_post         // Post-handler
 }; 
 
-// Kprobe for kvm_unmap_gfn_range: invalidate an EPT entry 
-// static struct kprobe ept_invalidation_kp = {
-//     .symbol_name = "kvm_unmap_gfn_range", 
-//     .pre_handler = ept_invalidation_pre
-// };
+
+/**
+ * ************************************ * 
+ * kprobe hooks for kvm_zap_gfn_range * 
+ * ************************************ * 
+ */ 
+
+// Pre-handler for kvm_zap_gfn_range
+static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
+    struct kvm *kvm = (struct kvm *)regs->di;
+    gfn_t start_gfn = (gfn_t)regs->si;
+    gfn_t end_gfn = (gfn_t)regs->dx;
+
+    // Iterate through GFNs and mark is_ept=true
+    for (gfn_t gfn = start_gfn; gfn < end_gfn; gfn++) {
+        gpa_t gpa = gfn_to_gpa(gfn); // Convert GFN to GPA
+        struct sre_flags *entry = sre_lookup_gpa_flags(gpa);
+        if (entry) {
+            entry->is_ept = true; // Mark as KVM-triggered EPT invalidation
+        }
+    }
+
+    return 0;
+}
+
+// Kprobe for kvm_zap_gfn_range: invalidate an EPT entry 
+static struct kprobe ept_invalidation_kp = {
+    .symbol_name = "kvm_zap_gfn_range", 
+    .pre_handler = ept_invalidation_pre
+};
+
 
 // Module initialization
 static int __init sre_init(void) {
     int ret = register_kprobe(&ept_violation_kp);
     if (ret < 0) {
-        pr_err("[linanqinqin] Failed to register kprobe: %d\n", ret);
+        pr_err("[linanqinqin] Failed to register kprobe kvm_mmu_page_fault: %d\n", ret);
+        return ret;
+    }
+
+    int ret = register_kprobe(&ept_invalidation_kp);
+    if (ret < 0) {
+        pr_err("[linanqinqin] Failed to register kprobe kvm_zap_gfn_range: %d\n", ret);
         return ret;
     }
 
