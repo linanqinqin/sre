@@ -107,11 +107,12 @@ static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
     struct kvm *kvm = (struct kvm *)regs->di;
     gfn_t start_gfn = (gfn_t)regs->si;
     gfn_t end_gfn = (gfn_t)regs->dx;
+    gfn_t gfn_idx
 
     // Iterate through GFNs and mark is_ept=true
-    for (gfn_t gfn = start_gfn; gfn < end_gfn; gfn++) {
-        gpa_t gpa = gfn_to_gpa(gfn); // Convert GFN to GPA
-        struct sre_flags *entry = sre_lookup_gpa_flags(gpa);
+    for (gfn_t gfn_idx = start_gfn; gfn_idx < end_gfn; gfn_idx++) {
+        gpa_t gpa = gfn_to_gpa(gfn_idx); // Convert GFN to GPA
+        struct sre_flags *entry = sre_flags_lookup(gpa);
         if (entry) {
             entry->is_ept = true; // Mark as KVM-triggered EPT invalidation
         }
@@ -129,13 +130,15 @@ static struct kprobe ept_invalidation_kp = {
 
 // Module initialization
 static int __init sre_init(void) {
-    int ret = register_kprobe(&ept_violation_kp);
+    int ret; 
+
+    ret = register_kprobe(&ept_violation_kp);
     if (ret < 0) {
         pr_err("[linanqinqin] Failed to register kprobe kvm_mmu_page_fault: %d\n", ret);
         return ret;
     }
 
-    int ret = register_kprobe(&ept_invalidation_kp);
+    ret = register_kprobe(&ept_invalidation_kp);
     if (ret < 0) {
         pr_err("[linanqinqin] Failed to register kprobe kvm_zap_gfn_range: %d\n", ret);
         return ret;
