@@ -132,12 +132,14 @@ static struct kprobe ept_invalidation_kp = {
 static int __init sre_init(void) {
     int ret; 
 
+    // register the kprobes to the KVM EPT violation handler 
     ret = register_kprobe(&ept_violation_kp);
     if (ret < 0) {
         pr_err("[linanqinqin] Failed to register kprobe kvm_mmu_page_fault: %d\n", ret);
         return ret;
     }
 
+    // regirster the kprobes to the KVM EPT invalidation handler 
     ret = register_kprobe(&ept_invalidation_kp);
     if (ret < 0) {
         pr_err("[linanqinqin] Failed to register kprobe kvm_zap_gfn_range: %d\n", ret);
