@@ -104,7 +104,7 @@ static struct kprobe ept_violation_kp = {
 
 // Pre-handler for kvm_zap_gfn_range
 static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
-    struct kvm *kvm = (struct kvm *)regs->di;
+    // struct kvm *kvm = (struct kvm *)regs->di;
     gfn_t start_gfn = (gfn_t)regs->si;
     gfn_t end_gfn = (gfn_t)regs->dx;
     gfn_t gfn_idx;
