@@ -107,7 +107,7 @@ static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
     struct kvm *kvm = (struct kvm *)regs->di;
     gfn_t start_gfn = (gfn_t)regs->si;
     gfn_t end_gfn = (gfn_t)regs->dx;
-    gfn_t gfn_idx
+    gfn_t gfn_idx;
 
     // Iterate through GFNs and mark is_ept=true
     for (gfn_idx = start_gfn; gfn_idx < end_gfn; gfn_idx++) {
