@@ -110,7 +110,7 @@ static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
     gfn_t gfn_idx
 
     // Iterate through GFNs and mark is_ept=true
-    for (gfn_t gfn_idx = start_gfn; gfn_idx < end_gfn; gfn_idx++) {
+    for (gfn_idx = start_gfn; gfn_idx < end_gfn; gfn_idx++) {
         gpa_t gpa = gfn_to_gpa(gfn_idx); // Convert GFN to GPA
         struct sre_flags *entry = sre_flags_lookup(gpa);
         if (entry) {
