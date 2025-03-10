@@ -165,6 +165,7 @@ static int __init sre_init(void) {
 // Module cleanup
 static void __exit sre_exit(void) {
     unregister_kprobe(&ept_violation_kp);
+    unregister_kprobe(&ept_invalidation_kp);
     sre_flags_cleanup();
     pr_info("[linanqinqin] SRE Kprobe unregistered\n");
 }
