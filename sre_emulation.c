@@ -30,7 +30,7 @@ static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
     struct sre_flags *sflags; 
 
     // Log the access and call emulate_sre unconditionally
-    pr_info("[linanqinqin] PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
+    // pr_info("[linanqinqin] PRE: vCPU=%p accessed GPA=0x%llx\n", vcpu, gpa);
 
     // lookup the per-GPA SRE flags metadata
     sflags = sre_flags_lookup(gpa);
