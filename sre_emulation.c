@@ -80,7 +80,7 @@ static void ept_violation_post(struct kprobe *p, struct pt_regs *regs, unsigned 
     struct sre_flags *sflags; 
 
     // Log completion and call emulate_sre again
-    pr_info("[linanqinqin] POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
+    // pr_info("[linanqinqin] POST: vCPU=%p GPA=0x%llx handled\n", vcpu, gpa);
 
     // lookup the per-GPA SRE flags metadata
     sflags = sre_flags_lookup(gpa); 
