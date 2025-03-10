@@ -36,6 +36,7 @@ static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
     sflags = sre_flags_lookup(gpa);
     if (!sflags) return 0;      // skip ept_violation_pre when lookup failed, due to allocation failure 
 
+    /* original logic start 
     // checking the ept and sre flags to determine appropriate paths 
     if (sflags->is_ept) {
         // this EPT violation contains a regular EPT violation
@@ -61,7 +62,12 @@ static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
     } 
     else {
         // this should not happen
-    }
+    } 
+       original logic end */
+
+    /* stage 1: matching up is_ept EPT entry violation/validation */
+    pr_info("[linanqinqin] in ept_violation_pre: is_ept=%s, vCPU=%p accessed GPA=0x%llx\n", (sflags->is_ept)? "true": "false", vcpu, gpa); 
+    /* stage 1: matching up is_ept EPT entry violation/validation */
 
     // default: allow original kvm_mmu_page_fault to execute
     return 0;
@@ -115,6 +121,9 @@ static int ept_invalidation_pre(struct kprobe *p, struct pt_regs *regs) {
         struct sre_flags *entry = sre_flags_lookup(gpa);
         if (entry) {
             entry->is_ept = true; // Mark as KVM-triggered EPT invalidation
+            /* stage 1 */
+            pr_info("[linanqinqin] in ept_invalidation_pre: GPA=0x%llx invalidated\n", gpa); 
+            /* stage 1 */
         }
     }
 
