@@ -67,6 +67,7 @@ static int ept_violation_pre(struct kprobe *p, struct pt_regs *regs) {
 
     /* stage 1: matching up is_ept EPT entry violation/validation */
     pr_info("[linanqinqin] in ept_violation_pre: is_ept=%s, vCPU=%p accessed GPA=0x%llx\n", (sflags->is_ept)? "true": "false", vcpu, gpa); 
+    sflags->is_ept = false; 
     /* stage 1: matching up is_ept EPT entry violation/validation */
 
     // default: allow original kvm_mmu_page_fault to execute
