@@ -14,4 +14,4 @@ sudo qemu-system-x86_64 \
     -daemonize \
     -qmp unix:./qmp.sock,server,nowait \
     -vnc localhost:0 \
-    -audiodev none
+    -audiodev none,id=snd0 
