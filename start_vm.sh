@@ -13,4 +13,5 @@ sudo qemu-system-x86_64 \
     -net nic,model=virtio \
     -daemonize \
     -qmp unix:./qmp.sock,server,nowait \
-    -vnc localhost:0
+    -vnc localhost:0 \
+    -audiodev none
